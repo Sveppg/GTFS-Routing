@@ -19,3 +19,10 @@ Ver. 3 was build with qmake.
 
 
 <img width="1106" alt="image" src="https://github.com/user-attachments/assets/a781b21c-635b-444d-b480-a3774f73fa6f">
+
+
+## Coming soons:
+-> Routing Ausgabe
+-> Linien Auswahl
+-> Fahrt Auswahl
+![Datenstruktur](https://github.com/user-attachments/assets/a60e98ec-482d-437a-84ed-f5b3bd1646e2)
