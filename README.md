@@ -7,7 +7,8 @@ A small project in Cpp to navigate through germany with Open-Source CSV-Data.
 - Search-ver. CSV-Reader -> Search for Stops from the Commandline
 3. Qt-Search
 - Search-ver. but with a Qt window.
-
+4. Qt-Search for Stops in App
+- Search for Stops in gui
 Ver. 1+2 are build with CMake, just run the script.
 Ver. 3 was build with qmake.
 
