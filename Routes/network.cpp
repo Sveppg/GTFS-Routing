@@ -1,14 +1,15 @@
 #include "network.h"
 #include "CSVReader.h"
 #include "types.h"
-#include <filesystem>
 #include <iostream>
+#include <iomanip>
 #include <string>
-#include <type_traits>
-#include <algorithm> // Für std::transform
-#include <cctype>    // Für std::tolower
 
-using namespace bht ;
+#include <sstream>      // Für std::oss
+#include <algorithm>    // Für std::transform
+#include <cctype>       // Für std::tolower
+
+namespace bht {
 
 Network::Network(const std::string& directoryPath) {
     // Laden der Daten aus den Dateien
@@ -37,37 +38,60 @@ Network::Network(const std::string& directoryPath) {
     std::cout << "load trips" << std::endl;
     loadTrips(directoryPath + "/trips.txt");
 }
-// For recieving Routes
-std::string Network::getRouteDisplayName(Route route){
-    return route.shortName + " - " + route.longName;
-}
-// For display routes
-std::vector<Route> Network::getRoutes() const{
-    std::vector<bht::Route> results;
-    for (const auto& [routeId, route]:routes){
-        results.push_back(route);
-    }
-    return results;
-}
-// For get Trips for Routes
-std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
-    std::vector<Trip> result;
-    for (const auto& trip : trips) {
-        if (trip.routeId == routeId) {  // Filter-Bedingung
-            result.push_back(trip);
+
+//For Search
+std::vector<StopTime> Network::searchStopTimesForTrip(std::string query, std::string tripId){
+    std::vector<StopTime> result;
+    std::string lowerQuery = query;
+    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), [](unsigned char c) {
+        return std::tolower(c);
+    });
+
+    // Suche alle StopTimes für die angegebene Trip-ID
+    for (const auto& stopTime : getStopTimesForTrip(tripId)) {
+        // Durchlaufe alle Stops und prüfe, ob der Name (oder ein anderes Attribut) den Query enthält
+        std::string lowerName = getStopById(stopTime.stopId).name;
+        std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), [](unsigned char c) {
+            return std::tolower(c);
+        });
+        if ((lowerName.find(lowerQuery) != std::string::npos)) {
+            result.push_back(stopTime);
         }
     }
+
+    // Sortiere die StopTimes nach Stop-Sequenz
+    std::sort(result.begin(), result.end(), [](const StopTime& a, const StopTime& b) {
+        return a.stopSequence < b.stopSequence;
+    });
     return result;
+
+};
+
+//For get Haltestellen
+Stop Network::getStopById(std::string stopId){
+    Stop result;
+    for (const auto& [stopid, stop] : stops){
+
+        if(stopid == stopId){
+            result = stop;
+        };
+    };
+    return result;
+};
+//format HH:MM:SS
+std::string Network::padZero(int value) {
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << value;
+    return oss.str();
 }
+//cast GTFStime to string
+std::string Network::castTime(GTFSTime input) {
+    return padZero((int)input.hour) + ":"
+           + padZero((int)input.minute) + ":"
+           +padZero((int)input.second);
 
-
-//For display trips
-std::string Network::getTripDisplayName(Trip trip){
-    std::string result;
-    return trip.shortName +" - " +trip.headsign;
 }
-
-// Methode, um alle Halte einer Fahrt zu bekommen, sortiert nach Stop-Sequenz
+//For stoptime
 std::vector<StopTime> Network::getStopTimesForTrip(std::string tripId) {
     std::vector<StopTime> result;
 
@@ -85,20 +109,46 @@ std::vector<StopTime> Network::getStopTimesForTrip(std::string tripId) {
 
     return result;
 }
+// For recieving Routes
+std::string Network::getRouteDisplayName(Route route){
 
-// Methode, um eine Haltestelle anhand ihrer ID zu erhalten
-Stop Network::getStopById(std::string stopId) {
-    // Suche nach der Stop-ID in der Haltestellen-Liste
-    if (stops.find(stopId) != stops.end()) {
-        return stops.at(stopId);
+    if (!route.longName.empty()) {
+        return route.shortName + " - " + route.longName;
+    }
+    // Falls longName leer ist, nur shortName zurückgeben
+    return route.shortName;
+};
+// For display routes
+std::vector<Route> Network::getRoutes() const{
+    std::vector<bht::Route> results;
+    for (const auto& [routeId, route]:routes){
+        results.push_back(route);
+    }
+    return results;
+};
+// For get Trips for Routes
+std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
+    std::vector<Trip> result;
+    for (const auto& trip : trips) {
+        if (trip.routeId == routeId) {  // Filter-Bedingung
+            result.push_back(trip);
+        }
+    }
+    return result;
+}
+//For display trips
+std::string Network::getTripDisplayName(Trip trip){
+    if(!trip.shortName.empty()){
+        return trip.shortName +" - "+ trip.headsign;
+
+
     }
 
-    // Rückgabe eines leeren Stop-Objekts bei Nichtexistenz
-    return Stop{};
-}
+    return trip.headsign;
 
+};
 
-//for search
+//For Search //labor2
 std::vector<Stop> Network::search(std::string& query) const {
     std::vector<Stop> results;
 
@@ -123,36 +173,8 @@ std::vector<Stop> Network::search(std::string& query) const {
 }
 
 
-/* ab -> 3(d) -> search() behalten
-// for StopTimesSearch
-std::vector<StopTime> Network::searchStopTimesForTrip(std::string& query, std::string& tripId){
-    std::vector<StopTime> results;
-    std::string lowerQuery = query;
-    std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
 
-    for (const auto& stopTime : stopTimes) {
-        if (stopTime.tripId == tripId) {
-            std::string lowerStopName = stopTimes[stopTime.stopId]; // Annahme: stopNames mappt stopId -> Name ??
-            std::transform(lowerStopName.begin(), lowerStopName.end(), lowerStopName.begin(), ::tolower);
-
-            // Überprüfe, ob query im StopName oder StopId enthalten ist
-            if (lowerStopName.find(lowerQuery) != std::string::npos || stopTime.stopId.find(query) != std::string::npos) {
-                results.push_back(stopTime);
-            }
-        }
-    }
-
-    // Sortiere die Ergebnisse nach stopSequence
-    std::sort(results.begin(), results.end(), [](const StopTime& a, const StopTime& b) {
-        return a.stopSequence < b.stopSequence;
-    });
-    return results;
-}
-*/
-
-
-
-
+//einbringung der GTSF DATEIEN ins Script
 // Method for Agencies
 void Network::loadAgencies(const std::string& filePath) {
     CSVReader agencyReader{filePath};
@@ -160,15 +182,15 @@ void Network::loadAgencies(const std::string& filePath) {
         if (agencyReader.next()) {
             // std::cout<<filePath<<std::endl;
             Agency agency={
-            .id = agencyReader.getField("agency_id",""),
-            .name = agencyReader.getField("agency_name",""),
-            .url = agencyReader.getField("agency_url",""),
-            .timezone = agencyReader.getField("agency_timezone",""),
-            .language = agencyReader.getField("agency_lang",""),
-            .phone = agencyReader.getField("agency_phone","")
+                .id = agencyReader.getField("agency_id",""),
+                .name = agencyReader.getField("agency_name",""),
+                .url = agencyReader.getField("agency_url",""),
+                .timezone = agencyReader.getField("agency_timezone",""),
+                .language = agencyReader.getField("agency_lang",""),
+                .phone = agencyReader.getField("agency_phone","")
             };
             // std::cout<<agency.id<<std::endl; // Debug output
-        agencies[agency.id] = agency;
+            agencies[agency.id] = agency;
         }
     }
 }
@@ -217,7 +239,7 @@ void Network::loadCalendars(const std::string& filePath) {
     while (calendarReader.hasNext()) {
         if (calendarReader.next()) {
             Calendar calendar;  // Erstelle eine neue Calendar-Instanz.
-             // Lese die Felder aus der CSV-Datei aus und weise sie den Membern der Struktur zu.
+                // Lese die Felder aus der CSV-Datei aus und weise sie den Membern der Struktur zu.
             calendar.serviceId = calendarReader.getField("service_id");
             calendar.monday = static_cast<CalendarAvailability>(std::stoi(calendarReader.getField("monday")));
             calendar.tuesday = static_cast<CalendarAvailability>(std::stoi(calendarReader.getField("tuesday")));
@@ -227,7 +249,7 @@ void Network::loadCalendars(const std::string& filePath) {
             calendar.saturday = static_cast<CalendarAvailability>(std::stoi(calendarReader.getField("saturday")));
             calendar.sunday = static_cast<CalendarAvailability>(std::stoi(calendarReader.getField("sunday")));
 
-             // Konvertiere das Datum aus dem Format YYYYMMDD in eine GTFSDate-Struktur.
+            // Konvertiere das Datum aus dem Format YYYYMMDD in eine GTFSDate-Struktur.
             calendar.startDate = {
                 static_cast<unsigned char>(std::stoi(calendarReader.getField("start_date").substr(6, 2))),
                 static_cast<unsigned char>(std::stoi(calendarReader.getField("start_date").substr(4, 2))),
@@ -245,7 +267,7 @@ void Network::loadCalendars(const std::string& filePath) {
 }
 
 void Network::loadFrequencies(const std::string& filePath){
-	std::cout << filePath << std::endl;
+    std::cout << filePath << std::endl;
 }
 
 
@@ -262,7 +284,7 @@ void Network::loadLevels(const std::string& filePath) {
                     std::cerr << "Fehlendes Level ID in Datei: " << filePath << std::endl;
                     continue;
                 }
-                
+
                 std::string indexStr = levelReader.getField("level_index");
                 if (!indexStr.empty()) {
                     level.index = std::stoi(indexStr);
@@ -270,10 +292,10 @@ void Network::loadLevels(const std::string& filePath) {
                     std::cerr << "Fehlender Level-Index für ID: " << level.id << std::endl;
                     continue;
                 }
-                
+
                 level.name = levelReader.getField("level_name"); // Optional, falls leer akzeptabel ist
                 levels[level.id] = level;
-                
+
             } catch (const std::invalid_argument& e) {
                 std::cerr << "Ungültiger Indexwert für Level-ID: " << level.id << " in Datei " << filePath << std::endl;
             } catch (const std::out_of_range& e) {
@@ -348,7 +370,7 @@ void Network::loadRoutes(const std::string& filePath){
             route.color = routesReader.getField("route_color");
             route.textColor = routesReader.getField("route_text_color");
             routes[route.id] = route;
-        }       
+        }
     }
 }
 
@@ -356,15 +378,15 @@ void Network::loadRoutes(const std::string& filePath){
 void Network::loadShapes(const std::string& filePath){
     CSVReader shapesReader(filePath);
     while(shapesReader.hasNext()){
-         if(shapesReader.next()){
+        if(shapesReader.next()){
             Shape shape;
             shape.id = shapesReader.getField("shape_id");
             shape.latitude = std::stod(shapesReader.getField("shape_pt_lat"));
             shape.longitude = std::stod(shapesReader.getField("shape_pt_lon"));
-            shape.sequence = std::stoi(shapesReader.getField("shape_pt_sequence"));         
+            shape.sequence = std::stoi(shapesReader.getField("shape_pt_sequence"));
             shapes.push_back(shape);
-         }
-     }
+        }
+    }
 }
 
 //Method for StopTimes
@@ -431,26 +453,26 @@ void Network::loadStops(const std::string& filePath) {
 
 // Method for Transfer
 void Network::loadTransfers(const std::string& filePath) {
-  CSVReader transferReader{filePath};
-  while (transferReader.hasNext()) {
-    // Fetch the next line
-    if (transferReader.next()) {
-      Transfer item = {
-        transferReader.getField("from_stop_id"),
-        transferReader.getField("to_stop_id"),
-        transferReader.getField("from_route_id"),
-        transferReader.getField("to_route_id"),
-        transferReader.getField("from_trip_id"),
-        transferReader.getField("to_trip_id"),
-        (TransferType)std::stoi(transferReader.getField("transfer_type")),
-        (unsigned int)std::stoi(transferReader.getField("min_transfer_time", "0"))
-      };
-      transfers.push_back(item);
+    CSVReader transferReader{filePath};
+    while (transferReader.hasNext()) {
+        // Fetch the next line
+        if (transferReader.next()) {
+            Transfer item = {
+                transferReader.getField("from_stop_id"),
+                transferReader.getField("to_stop_id"),
+                transferReader.getField("from_route_id"),
+                transferReader.getField("to_route_id"),
+                transferReader.getField("from_trip_id"),
+                transferReader.getField("to_trip_id"),
+                (TransferType)std::stoi(transferReader.getField("transfer_type")),
+                (unsigned int)std::stoi(transferReader.getField("min_transfer_time", "0"))
+            };
+            transfers.push_back(item);
+        }
     }
-  }
 }
 
-//Method for Trips 
+//Method for Trips
 void Network::loadTrips(const std::string& path) {
     CSVReader reader{path};
     while (reader.hasNext()) {
@@ -469,11 +491,12 @@ void Network::loadTrips(const std::string& path) {
                 static_cast<WheelchairAccessibility>(std::stoi(reader.getField("wheelchair_accessible", "0"))),
                 reader.getField("bikes_allowed", "0") == "1"
             });
-                // Convert the bikes_allowed field to a bool explicitly
-               //static_cast<bool>(static_cast<BikesAllowed>(std::stoi(reader.getField("bikes_allowed", "0")) == 1))
+            // Convert the bikes_allowed field to a bool explicitly
+            //static_cast<bool>(static_cast<BikesAllowed>(std::stoi(reader.getField("bikes_allowed", "0")) == 1))
             //};
             //trips.push_back(item);
         }
     }
 }
 
+}

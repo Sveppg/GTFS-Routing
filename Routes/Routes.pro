@@ -16,6 +16,7 @@ SOURCES += \
     network.cpp
 
 HEADERS += \
+    CSVReader.h \
     mainwindow.h \
     network.h \
     types.h
