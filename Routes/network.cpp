@@ -1,45 +1,271 @@
-#include "network.h"
-#include "CSVReader.h"
-#include "types.h"
 #include <iostream>
+#include <unordered_set>
+#include <unordered_map>
 #include <iomanip>
 #include <string>
+#include <sstream>   
+#include <algorithm>    
+#include <cctype>       
+#include <queue>
+#include<limits>
+// custom include
+#include "scheduled_trip.h"
+#include "CSVReader.h"
+#include "types.h"
+#include "network.h"
 
-#include <sstream>      // Für std::oss
-#include <algorithm>    // Für std::transform
-#include <cctype>       // Für std::tolower
 
 namespace bht {
 
 Network::Network(const std::string& directoryPath) {
-    // Laden der Daten aus den Dateien
-    std::cout << "load Agency" << std::endl;
-    loadAgencies(directoryPath + "/agency.txt");
-    std::cout << "load CalendarDates" << std::endl;
-    loadCalendarDates(directoryPath + "/calendar_dates.txt");
-    std::cout << "load Calendar" << std::endl;
-    loadCalendars(directoryPath + "/calendar.txt");
-    std::cout << "load Frequencie" << std::endl;
-    loadFrequencies(directoryPath + "/frequencies.txt");
-    std::cout << "load Level" << std::endl;
-    loadLevels(directoryPath + "/levels.txt");
-    std::cout << "load Pathway" << std::endl;
-    loadPathways(directoryPath + "/pathways.txt");
-    std::cout << "load Routes" << std::endl;
-    loadRoutes(directoryPath + "/routes.txt");
-    std::cout << "load Shapes" << std::endl;
-    loadShapes(directoryPath +"/shapes.txt");
-    std::cout << "load StopTimes" << std::endl;
-    loadStopTimes(directoryPath + "/stop_times.txt");
-    std::cout << "load Stops" << std::endl;
-    loadStops(directoryPath + "/stops.txt");
-    std::cout << "load transfer" << std::endl;
-    loadTransfers(directoryPath + "/transfers.txt");
-    std::cout << "load trips" << std::endl;
-    loadTrips(directoryPath + "/trips.txt");
+    
+    std::cout << "loading Data..." << std::endl;
+   loadAgencies(directoryPath + "/agency.txt");
+    //std::cout << "load CalendarDates" << std::endl;
+   loadCalendarDates(directoryPath + "/calendar_dates.txt");
+    //std::cout << "load Calendar" << std::endl;
+   loadCalendars(directoryPath + "/calendar.txt");
+    //std::cout << "load Frequencie" << std::endl;
+   loadFrequencies(directoryPath + "/frequencies.txt");
+    //std::cout << "load Level" << std::endl;
+   loadLevels(directoryPath + "/levels.txt");
+   loadPathways(directoryPath + "/pathways.txt");
+    //std::cout << "load Routes" << std::endl;
+   loadRoutes(directoryPath + "/routes.txt");
+    //std::cout << "load Shapes" << std::endl;
+   loadShapes(directoryPath +"/shapes.txt");
+    //std::cout << "load StopTimes" << std::endl;
+   loadStopTimes(directoryPath + "/stop_times.txt");
+    //std::cout << "load Stops" << std::endl;
+   loadStops(directoryPath + "/stops.txt");
+    //std::cout << "load transfer" << std::endl;
+   loadTransfers(directoryPath + "/transfers.txt");
+    
+   loadTrips(directoryPath + "/trips.txt");
+    std::cout << "Data loaded: ->" << std::endl;
+   
+   buildStopIdToTrips(stopTimes);
+   buildTripIdToStopTimes(stopTimes);
 }
 
-//For Search
+
+NetworkScheduledTrip Network::getScheduledTrip(const std::string& tripId) const {
+    // Hole die StopTimes für die angegebene tripId
+    auto stopTimesForTrip = getStopTimesForTrip(tripId);
+    return NetworkScheduledTrip(tripId, stopTimesForTrip);
+}
+
+
+void Network::buildStopIdToTrips(const std::vector<bht::StopTime> &stopTimes){
+    // Clear the map
+    stopIdToTrips.clear();
+    for (const auto &stopTime : stopTimes){
+    // Add the trip ID to the corresponding stop ID in the map
+        stopIdToTrips[stopTime.stopId].push_back(stopTime.tripId);
+    }
+}   
+
+void Network::buildTripIdToStopTimes(const std::vector<bht::StopTime> &stopTimes){
+    tripIdToStopTimes.clear();
+    for (const auto &stopTime : stopTimes){
+        tripIdToStopTimes[stopTime.tripId].push_back(stopTime);
+    }
+    // sort with stopSequence (faster lookup later) /
+    for (auto &[tripId, stopTimesVector] : tripIdToStopTimes){
+            /*
+            Parameters
+            first, last    -    the range of elements to sort
+            policy        -    the execution policy to use. See execution policy for details.
+            comp        -    comparison function object (i.e. an object that satisfies the requirements of Compare) which returns ​true if the first argument is less than (i.e. is ordered before) the second.
+            // we create a lambda (throw away func) to sort it easy via < */
+        std::sort(stopTimesVector.begin(), stopTimesVector.end(),
+            [](const bht::StopTime &first, 
+            const bht::StopTime &second){
+                return first.stopSequence < second.stopSequence;
+            });
+        }
+}
+
+
+std::unordered_set<std::string> Network::getNeighbors(const std::string& stopId) {
+
+    std::unordered_set<std::string> neighbors;
+    
+    
+    if (stopIdToTrips.find(stopId) == stopIdToTrips.end()) {
+        std::cout<<"Kein nachbar gefunden !!!"<< stopId << std::endl;
+        return neighbors; // Kein Nachbar gefunden
+    }
+
+    // Iteriere über alle Trips, die mit diesem Stop verknüpft sind 
+    for (const auto& tripId : stopIdToTrips[stopId]) {
+        // Prüfen, ob der Trip in der Map existiert
+        if (tripIdToStopTimes.find(tripId) == tripIdToStopTimes.end()) {
+        std::cout<<"no Trip found"<<std::endl;
+            continue;
+        }
+
+        const auto& stopTimesList = tripIdToStopTimes.at(tripId);
+        // Suche die aktuelle Position des Stops im StopTimes-Array
+        auto it = std::find_if(stopTimesList.begin(), stopTimesList.end(),
+            [&stopId](const bht::StopTime& stopTime) {
+                return stopTime.stopId == stopId;
+            });
+        if (it != stopTimesList.end()) {
+            // Nachbarn hinzufügen (vorheriger und nächster Stop im Trip)
+            if (it != stopTimesList.begin()) {
+                neighbors.insert((it - 1)->stopId); // Vorheriger Stop
+                // print(neighbors);
+            }
+            if (it + 1 != stopTimesList.end()) {
+                neighbors.insert((it + 1)->stopId); // Nächster Stop
+            }
+        }
+    }
+    for (const auto& inserted: getStopsForTransfer(stopId)){
+        if(inserted.locationType == LocationType_Stop){
+        neighbors.insert(inserted.id);
+        }
+    }
+    return neighbors;
+}
+
+
+std::vector<Stop> Network::getTravelPath(const std::string& fromStopId, const std::string& toStopId) {
+    std::vector<bht::Stop> vekStop = Network::getStopsForTransfer(fromStopId);
+
+    // for (const auto& stop_vek :vekStop){
+    //     std::cout << "stop sollte immer der gleiche sein " <<stop_vek.name << "unterschiedliche ID: " <<stop_vek.id<<std::endl;
+    // }
+
+    // Distanzen und Vorgänger
+    std::unordered_map<std::string, double> distances;
+    std::unordered_map<std::string, std::string> previous;
+    std::unordered_set<std::string> visited;    
+    std::vector<Stop> path;
+
+    // Prioritätswarteschlange (Min-Heap)
+    std::priority_queue<std::pair<double, std::string>, 
+                        std::vector<std::pair<double, 
+                        std::string>>, 
+                        std::greater<>> pq;
+
+    // Initialisierung
+    for (const auto& stop : stops) {
+        distances[stop.second.id] = std::numeric_limits<double>::max();
+    }
+    
+
+    distances[fromStopId] = 0.0;
+    pq.emplace(0.0, fromStopId);
+    for (const auto& stop:vekStop){
+        distances[stop.id] = 0.0;
+        pq.emplace(0.0, stop.id);
+    }
+
+    std::cout << "from: " << fromStopId << std::endl;
+    std::cout << "to: " << toStopId << std::endl;
+    
+    // Dijkstra-Algorithmus
+    while (!pq.empty()) {
+        auto [currentDistance, currentStopId] = pq.top();
+        pq.pop();
+        
+        if (visited.count(currentStopId)) continue;
+        visited.insert(currentStopId);
+
+
+        // Ziel erreicht
+        if (currentStopId == toStopId) break;
+
+        // Verarbeite Nachbarn
+        for (const auto& neighbor : Network::getNeighbors(currentStopId)) {
+            if (visited.count(neighbor)) continue;
+
+            double newDistance = currentDistance + 1.0; // Annahme: Kosten pro Verbindung = 1
+            if (newDistance < distances[neighbor]) {
+                distances[neighbor] = newDistance;
+                previous[neighbor] = currentStopId;
+                pq.emplace(newDistance, neighbor);
+            }
+        }
+    }
+
+    // Kein Weg gefunden
+    if (distances[toStopId] == std::numeric_limits<double>::max()) {
+        std::cerr << "No path found from " << fromStopId << " to " << toStopId << std::endl;
+        return path;
+    }
+
+    // Pfad rekonstruieren
+    for (std::string at = toStopId; at != fromStopId;) {
+        auto it = stops.find(at);
+        if (it != stops.end()) {
+            path.push_back(it->second);
+        } else {
+            std::cerr << "Error: Stop ID not found in stops map: " << at << std::endl;
+            break; // Vermeidet Endlosschleife
+        }
+
+        // Überprüfen, ob 'at' im vorherigen Knoten existiert
+        auto prevIt = previous.find(at);
+        if (prevIt == previous.end()) {
+            break; // Vermeidet Endlosschleife
+        }   
+        // Zum nächsten Knoten wechseln
+        at = prevIt->second;
+    }   
+
+    // Startknoten hinzufügen
+    auto startIt = stops.find(fromStopId);
+    if (startIt != stops.end()) {
+        path.push_back(startIt->second);
+    }
+
+    // Pfad umkehren
+    std::reverse(path.begin(), path.end());
+    // std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
+// for 4a
+std::vector<bht::Stop> Network::getStopsForTransfer(const std::string& stopId){
+    std::vector<bht::Stop> result; 
+    bht::Stop sto_p = getStopById(stopId);
+    // std::cout<<"Wahl gefunden"<< sto_p.name <<std::endl;
+    if ((sto_p.parentStation.empty()) && (sto_p.locationType == LocationType_Station ) ){
+        // std::cout<<"1 eine stations gefunden"<<std::endl;
+    for (const auto &[stopid,stop]:stops){
+        if (stopid.find(stopId) != std::string::npos){
+                result.push_back(stop);
+        }
+    }
+    }else if (sto_p.locationType ==LocationType_Stop){
+        // std::cout<<"2 eine stations gefunden"<<std::endl;    
+    // mogel-Funktion
+        for (const auto &[stopid,stop]:stops){
+            if ((stopId!= stop.id) &&(stopId.find(stop.id) != std::string::npos)){
+                // std::cout<<stop.id<<std::endl;
+                result = Network::getStopsForTransfer(stop.id);
+                // result.push_back(stop);
+            }
+        }
+    }
+    
+    // Sortiere die Stop nach Stop-ID
+    std::sort(result.begin(), result.end(), [](const Stop& a, const Stop& b) {
+        return a.id < b.id;
+    });
+    return result;
+}
+
+
+
+
+
+//For Search from labor 03
+//seach from the filtered stop
 std::vector<StopTime> Network::searchStopTimesForTrip(std::string query, std::string tripId){
     std::vector<StopTime> result;
     std::string lowerQuery = query;
@@ -65,9 +291,9 @@ std::vector<StopTime> Network::searchStopTimesForTrip(std::string query, std::st
     });
     return result;
 
-};
+}
 
-//For get Haltestellen
+//For get stops from stop id
 Stop Network::getStopById(std::string stopId){
     Stop result;
     for (const auto& [stopid, stop] : stops){
@@ -77,7 +303,8 @@ Stop Network::getStopById(std::string stopId){
         };
     };
     return result;
-};
+}
+
 //format HH:MM:SS
 std::string Network::padZero(int value) {
     std::ostringstream oss;
@@ -87,12 +314,13 @@ std::string Network::padZero(int value) {
 //cast GTFStime to string
 std::string Network::castTime(GTFSTime input) {
     return padZero((int)input.hour) + ":"
-           + padZero((int)input.minute) + ":"
-           +padZero((int)input.second);
-
+        + padZero((int)input.minute) + ":"
+        +padZero((int)input.second);
 }
+
 //For stoptime
-std::vector<StopTime> Network::getStopTimesForTrip(std::string tripId) {
+//get get stoptime from trip ID 
+std::vector<StopTime> Network::getStopTimesForTrip(std::string tripId) const {
     std::vector<StopTime> result;
 
     // Suche alle StopTimes für die angegebene Trip-ID
@@ -109,15 +337,16 @@ std::vector<StopTime> Network::getStopTimesForTrip(std::string tripId) {
 
     return result;
 }
+
 // For recieving Routes
 std::string Network::getRouteDisplayName(Route route){
 
-    if (!route.longName.empty()) {
-        return route.shortName + " - " + route.longName;
-    }
-    // Falls longName leer ist, nur shortName zurückgeben
-    return route.shortName;
-};
+  if (!route.longName.empty()) {
+    return route.shortName + " - " + route.longName;
+  }
+  // Falls longName leer ist, nur shortName zurückgeben
+  return route.shortName;
+}
 // For display routes
 std::vector<Route> Network::getRoutes() const{
     std::vector<bht::Route> results;
@@ -125,7 +354,7 @@ std::vector<Route> Network::getRoutes() const{
         results.push_back(route);
     }
     return results;
-};
+}
 // For get Trips for Routes
 std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
     std::vector<Trip> result;
@@ -138,16 +367,13 @@ std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
 }
 //For display trips
 std::string Network::getTripDisplayName(Trip trip){
-    if(!trip.shortName.empty()){
-        return trip.shortName +" - "+ trip.headsign;
+  if(!trip.shortName.empty()){
+    return trip.shortName +" - "+ trip.headsign;
+  }
 
+  return trip.headsign;
 
-    }
-
-    return trip.headsign;
-
-};
-
+}
 //For Search //labor2
 std::vector<Stop> Network::search(std::string& query) const {
     std::vector<Stop> results;
@@ -173,7 +399,6 @@ std::vector<Stop> Network::search(std::string& query) const {
 }
 
 
-
 //einbringung der GTSF DATEIEN ins Script
 // Method for Agencies
 void Network::loadAgencies(const std::string& filePath) {
@@ -194,6 +419,7 @@ void Network::loadAgencies(const std::string& filePath) {
         }
     }
 }
+
 void Network::loadCalendarDates(const std::string& filePath) {
     CSVReader reader{filePath};
     while (reader.hasNext()) {
@@ -267,7 +493,7 @@ void Network::loadCalendars(const std::string& filePath) {
 }
 
 void Network::loadFrequencies(const std::string& filePath){
-    std::cout << filePath << std::endl;
+    (void)filePath;
 }
 
 
@@ -499,4 +725,4 @@ void Network::loadTrips(const std::string& path) {
     }
 }
 
-}
+} // for network bht

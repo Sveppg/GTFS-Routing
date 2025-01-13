@@ -1,18 +1,21 @@
+
 #pragma once
 #ifndef NETWORK_HPP
 #define NETWORK_HPP
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include "types.h"
+#include "scheduled_trip.h"
 
 namespace bht {
 
 class Network {
 public:
     explicit Network(const std::string& directoryPath);
-    // Data Access
+    
     std::unordered_map<std::string, Agency> agencies;
     std::vector<CalendarDate> calendarDates;
     std::unordered_map<std::string, Calendar> calendars;
@@ -24,30 +27,29 @@ public:
     std::unordered_map<std::string, Stop> stops;
     std::vector<Transfer> transfers;
     std::vector<Trip> trips;
-
-    //For get search
-    std::vector<StopTime> searchStopTimesForTrip(std::string query, std::string tripId);
-    //For get Haltestellen
-    Stop getStopById(std::string stopId);
-    //format HH:MM:SS
-    std::string padZero(int value);
-    //ParseTime
-    std::string castTime(GTFSTime input);
-    //For stoptime
-    std::vector<StopTime> getStopTimesForTrip(std::string tripId);
-    // For display routes
-    std::string getRouteDisplayName(Route route);
-    // For recieving Routes
-    std::vector<Route> getRoutes() const;
-    // For get Trips for Routes
-    std::vector<Trip> getTripsForRoute(std::string& routeId);
-    // for getTripDisplayName
-    std::string getTripDisplayName(Trip trip);
-    // For Search
     std::vector<Stop> search(std::string& query) const;
+    std::vector<Route> getRoutes() const;
+    std::string getRouteDisplayName(Route route);
+    std::vector<Trip> getTripsForRoute(std::string& routeId);
+    std::string getTripDisplayName(Trip trip);
+    std::vector<StopTime> getStopTimesForTrip(std::string tripId)const;
+    std::string castTime(GTFSTime input);
+    std::string padZero(int value);
+    Stop getStopById(std::string stopId);
+    std::vector<StopTime> searchStopTimesForTrip(std::string query, std::string tripId);
+    
+    //getStopsForTransfer Input stopID -> Output all stops within the station 
+    std::vector<bht::Stop> getStopsForTransfer(const std::string& stopId);
 
+    std::unordered_set<std::string> getNeighbors(const std::string& stopId);
+    std::vector<bht::Stop> getTravelPath(const std::string& fromStopId, const std::string& toStopId);
+    void buildStopIdToTrips(const std::vector<StopTime> &stopTimes);
+    void buildTripIdToStopTimes(const std::vector<StopTime> &stopTimes);
+    NetworkScheduledTrip getScheduledTrip(const std::string& tripId) const;
 
-
+    //map for conversion trip -> StopTimes StopId -> Trips
+    std::unordered_map<std::string , std::vector<StopTime>> tripIdToStopTimes;
+    std::unordered_map<std::string , std::vector<std::string>> stopIdToTrips;
 
 private:
     void loadAgencies(const std::string& filePath);
@@ -65,6 +67,4 @@ private:
 };
 
 }
-
-
 #endif
