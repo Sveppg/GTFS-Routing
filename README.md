@@ -7,11 +7,11 @@ A small project in Cpp to navigate through germany with Open-Source CSV-Data.
 - Search-ver. CSV-Reader -> Search for Stops from the Commandline
 3. Qt-Search
 - Search-ver. but with a Qt window.
-4. Qt-Search for Stops in App
-- Search for Stops in gui
+4. Routes
+- Search for Stops in GUI
 Ver. 1+2 are build with CMake, just run the script.
 Ver. 3 was build with qmake.
-
+Ver.4 search for specific stops in a train line
 #### Requirements:
 - CMake Version 3.15
 - Cpp Standard 14
@@ -19,11 +19,3 @@ Ver. 3 was build with qmake.
 - QMake Version 3.1
 
 
-<img width="1106" alt="image" src="https://github.com/user-attachments/assets/a781b21c-635b-444d-b480-a3774f73fa6f">
-
-
-## Coming soons:
--> Routing Ausgabe
--> Linien Auswahl
--> Fahrt Auswahl
-![Datenstruktur](https://github.com/user-attachments/assets/a60e98ec-482d-437a-84ed-f5b3bd1646e2)
