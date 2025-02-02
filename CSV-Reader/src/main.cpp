@@ -102,7 +102,7 @@ int main(int argc, char **argv){
                 << " Route-Description " << route.description
                 << " Route_Type " << route.type
                 << " Route-Colour " << route.color
-                << " Route                Text-Colour " << route.textColor
+                << " Route Text-Colour " << route.textColor
                 << std::endl;
     }   
     //for shapes
@@ -166,13 +166,13 @@ int main(int argc, char **argv){
     }
     //"from_stop_id","to_stop_id","transfer_type","min_transfer_time","from_route_id","to_route_id","from_trip_id","to_trip_id"
     for (const auto& pair : network.trips) {
-        const bht::Trip& trip = pair;  // Achte darauf, dass du den richtigen Typ verwendest
+        const bht::Trip& trip = pair;  
         std::cout << "Trip ID: " << trip.id  
               << " Route Id: " << trip.routeId
               << " Service ID: " << trip.serviceId
               << " Headsign: " << trip.headsign
               << " Short Name: " << trip.shortName
-              << " Direction ID: " << static_cast<int>(trip.direction)  // Umwandlung von Enum in int
+              << " Direction ID: " << static_cast<int>(trip.direction) 
               << " Block ID: " << trip.blockId
               << " Shape ID: " << trip.shapeId
               << " Wheelchair Accessible: " << trip.wheelchairAccessible

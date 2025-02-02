@@ -45,7 +45,83 @@ NetworkScheduledTrip Network::getScheduledTrip(const std::string& tripId) const 
     auto stopTimesForTrip = getStopTimesForTrip(tripId);
     return NetworkScheduledTrip(tripId, stopTimesForTrip);
 }
+/*
+std::vector<std::string> getRoutes(const std::string& filename) {
+    std::vector<std::string> routes;
+    std::ifstream file(filename);
+    std::string line, route_id;
 
+    if (!file.is_open()) {
+        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
+        return routes;
+    }
+
+    std::getline(file, line);  // Überspringe die Header-Zeile
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::getline(ss, route_id, ',');
+        routes.push_back(route_id);
+    }
+
+    return routes;
+}
+
+// Funktion, um `route_id -> Farbe` aus `routes.txt` zu mappen
+std::unordered_map<std::string, std::string> getRouteColors(const std::string& filename) {
+    std::unordered_map<std::string, std::string> routeColors;
+    std::ifstream file(filename);
+    std::string line, route_id, color;
+
+    if (!file.is_open()) {
+        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
+        return routeColors;
+    }
+
+    std::getline(file, line);  // Überspringe die Header-Zeile
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::getline(ss, route_id, ',');  // route_id
+        for (int i = 0; i < 4; ++i) std::getline(ss, color, ',');  // Springe zu `route_color`
+        std::getline(ss, color, ',');  // Lese die tatsächliche `route_color`
+
+        if (!color.empty() && color != "\"\"") {
+            routeColors[route_id] = color;
+        }
+    }
+
+    return routeColors;
+}
+
+// Funktion, um die Form (`shape_id`) aus `shapes.txt` zu extrahieren
+std::unordered_map<int, std::vector<Shape>> routeShapes(const std::string& filename) {
+    std::unordered_map<int, std::vector<Shape>> routeShapes;
+    std::ifstream file(filename);
+    std::string line, shape_id_str, lat_str, lon_str, seq_str;
+
+    if (!file.is_open()) {
+        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
+        return routeShapes;
+    }
+
+    std::getline(file, line);  // Überspringe die Header-Zeile
+    while (std::getline(file, line)) {
+        std::stringstream ss(line);
+        std::getline(ss, shape_id_str, ',');
+        std::getline(ss, lat_str, ',');
+        std::getline(ss, lon_str, ',');
+        std::getline(ss, seq_str, ',');
+
+        int shape_id = std::stoi(shape_id_str);
+        double lat = std::stod(lat_str);
+        double lon = std::stod(lon_str);
+        int sequence = std::stoi(seq_str);
+        for(auto [f_id, shapes_our]:routeShapes){
+            std::cout << f_id << std::endl;
+        }
+        //routeShapes[shape_id].push_back({shape_id, lat, lon, sequence});
+        }
+    return routeShapes;
+}
 
 void Network::getShapesForRoute() {
     std::unordered_map<std::string, std::vector<Shape>> shapesMap;
@@ -76,7 +152,7 @@ void Network::getShapesForRoute() {
         routeToShapes[routeId] = allShapesForRoute;
     }
 }
-
+*/
 void Network::buildStopIdToTrips(const std::vector<bht::StopTime> &stopTimes){
     // Clear the map
     stopIdToTrips.clear();

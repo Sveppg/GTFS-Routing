@@ -46,8 +46,10 @@ public:
     void buildTripIdToStopTimes(const std::vector<StopTime> &stopTimes);
 
     // for Ub 6
-    void getShapesForRoute();
-
+    //std::vector<std::string> getRoutes(const std::string& filename);
+    //std::unordered_map<std::string, std::string> getRouteColors(const std::string& filename);
+    //std::unordered_map<int, std::vector<Shape>> routeShapes(const std::string& filename);
+    //void getShapesForRoute();
 
     NetworkScheduledTrip getScheduledTrip(const std::string& tripId) const;
 

@@ -1,0 +1,3 @@
+/Users/svenemann/Code/OOP/Assignments/SomSem24/GTFS-Routing/CSV-Reader/build/CMakeFiles/main.dir
+/Users/svenemann/Code/OOP/Assignments/SomSem24/GTFS-Routing/CSV-Reader/build/CMakeFiles/edit_cache.dir
+/Users/svenemann/Code/OOP/Assignments/SomSem24/GTFS-Routing/CSV-Reader/build/CMakeFiles/rebuild_cache.dir

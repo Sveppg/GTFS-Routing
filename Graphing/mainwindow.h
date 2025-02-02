@@ -2,10 +2,12 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QGraphicsProxyWidget>
+#include <QGraphicsView>
 //header hinzufügen
 #include "types.h"
 #include "network.h"
-#include "CSVReader.h"
+//#include "CSVReader.h"
 #include "renderarea.h"
 
 QT_BEGIN_NAMESPACE
@@ -42,6 +44,9 @@ private slots:
 
     void on_searchLineEdit_textChanged(const QString &arg1);
 
+    //void setRenderAreaData();
+
+
 private:
     Ui::MainWindow *ui;
     //verwendete Variablen
@@ -49,5 +54,12 @@ private:
     bht::Stop *stop;
     std::string gtfsDirectory;
     std::vector<bht::Stop> search(std::string& query);
+    //eventuell für Path implement
+    //std::vector<bht::Stop> getTravelPath(const std::string &fromStopId, const std::string& toStopId);
+
+    QGraphicsView *graphicsView;
+    QGraphicsScene *scene;
+    RenderArea *renderArea;
+
 };
 #endif // MAINWINDOW_H

@@ -3,13 +3,19 @@
 #include "types.h"
 #include "network.h"
 #include "renderarea.h"
-#include <iomanip>
+//#include <iomanip>
 #include <QDebug>
+#include <QGraphicsProxyWidget>
 //erstellung dres fenste
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
-    , network(nullptr) // Initialize network to nullptr
+    , network(nullptr), // Initialize network to nullptr
+
+    //für Graphen
+    graphicsView(new QGraphicsView(this)),
+    scene(new QGraphicsScene(this)),
+    renderArea(new RenderArea)
 {
     ui->setupUi(this);
     gtfsDirectory = "/home/tw3/Code/OOP/Assignments/SomSem24/Qt/Graphing/build/Desktop-Debug/GTFSShort";
@@ -23,6 +29,16 @@ MainWindow::MainWindow(QWidget *parent)
             QVariant(QString::fromStdString(route.id))                   // Convert std::string to QString for QVariant
             );
     }
+    QVBoxLayout *layout = new QVBoxLayout();
+    layout->addWidget(ui->comboBox);
+    layout->addWidget(ui->comboBox_fahrt);
+    layout->addWidget(ui->searchLineEdit);
+    layout->addWidget(ui->tableWidget);
+    layout->addWidget(ui->graphicsView);
+
+    QWidget *centralWidget = new QWidget(this);
+    centralWidget->setLayout(layout);
+    setCentralWidget(centralWidget);
     // Setze die Header für die Tabelle
     QStringList headers = {"Nr. ", "Name Haltestelle:  ", "Ankunftszeit: ", "Abfahrtszeit: "};
     ui->tableWidget->setColumnCount(headers.size());       // Anzahl der Spalten festlegen
@@ -31,21 +47,20 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 
+
 MainWindow::~MainWindow()
 {
     delete network; // Clean up dynamically allocated memory
     delete ui;
 }
 
-
-
 void MainWindow::on_comboBox_currentTextChanged(const QString &arg1)
 {
     (void)arg1;
     ui->comboBox_fahrt->clear();
     //auto rout =  ui->comboBox->currentText();
-    auto rout =  ui->comboBox->currentText();       //get text from combobox
-    ui->comboBox_fahrt->addItem(QString(rout));     //display in combobox_fahrt
+    auto route =  ui->comboBox->currentText();       //get text from combobox
+    ui->comboBox_fahrt->addItem(QString(route));     //display in combobox_fahrt
 
     // Get the ID associated with the selected item
     QVariant id = ui->comboBox->currentData();      //get id from combobox
@@ -128,3 +143,20 @@ void MainWindow::on_searchLineEdit_textChanged(const QString &arg1)
         qDebug() << "No valid ID found in the lineEdited.";
     }
 }
+
+//Nicklas
+// void MainWindow::setRenderAreaData() {
+//     std::unordered_map<std::string, std::vector<bht::Shape>> routeShapes;
+
+//     network->getShapesForRoute();
+
+//     routeShapes = network->routeShapes;
+
+//     std::vector<bht::Route> routes = network->getRoutes();
+//     std::unordered_map<std::string, std::string> colors = network->getRouteColors(routes);
+
+//     renderArea->setNetworkData(routeShapes, colors);
+// }
+
+
+
