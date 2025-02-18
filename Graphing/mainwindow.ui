@@ -97,13 +97,13 @@
      <string>Suchergebnisse:</string>
     </property>
    </widget>
-   <widget class="QGraphicsView" name="graphicsView">
+   <widget class="RenderArea" name="widget" native="true">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>250</y>
       <width>771</width>
-      <height>311</height>
+      <height>301</height>
      </rect>
     </property>
    </widget>
@@ -120,6 +120,14 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RenderArea</class>
+   <extends>QWidget</extends>
+   <header>renderarea.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

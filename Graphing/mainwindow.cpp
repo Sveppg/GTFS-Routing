@@ -1,11 +1,13 @@
 #include "mainwindow.h"
-#include "./ui_mainwindow.h"
+#include "ui_mainwindow.h"
 #include "types.h"
 #include "network.h"
 #include "renderarea.h"
 //#include <iomanip>
 #include <QDebug>
 #include <QGraphicsProxyWidget>
+#include <ostream>
+#include <iostream>
 //erstellung dres fenste
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -13,8 +15,6 @@ MainWindow::MainWindow(QWidget *parent)
     , network(nullptr), // Initialize network to nullptr
 
     //für Graphen
-    graphicsView(new QGraphicsView(this)),
-    scene(new QGraphicsScene(this)),
     renderArea(new RenderArea)
 {
     ui->setupUi(this);
@@ -34,7 +34,10 @@ MainWindow::MainWindow(QWidget *parent)
     layout->addWidget(ui->comboBox_fahrt);
     layout->addWidget(ui->searchLineEdit);
     layout->addWidget(ui->tableWidget);
-    layout->addWidget(ui->graphicsView);
+    layout->addWidget(ui->widget);
+
+    ui->tableWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+    ui->tableWidget->setFixedHeight(250);
 
     QWidget *centralWidget = new QWidget(this);
     centralWidget->setLayout(layout);
@@ -43,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     QStringList headers = {"Nr. ", "Name Haltestelle:  ", "Ankunftszeit: ", "Abfahrtszeit: "};
     ui->tableWidget->setColumnCount(headers.size());       // Anzahl der Spalten festlegen
     ui->tableWidget->setHorizontalHeaderLabels(headers);   // Header-Texte setzen
+    ui->widget->setNetworkData(network->routeShapes, network->routeColors);
 
 }
 
@@ -92,7 +96,14 @@ void MainWindow::on_comboBox_fahrt_currentTextChanged(const QString &arg1)
     QVariant    rout_id = ui->comboBox->currentData();             //get id from combobox
     // Check if the data is valid
     if (trip_id.isValid()) {
+
         std::string tripId = trip_id.toString().toStdString();
+        std::string routId = rout_id.toString().toStdString();
+
+        std::cout << "Neue Route: " << routId << std::endl;
+        ui->widget->setHighlight(routId); // `ui->widget` ist die `RenderArea`
+
+
         for (auto stoptime : network->getStopTimesForTrip(tripId)){
             std::string arrivalTime     = network->castTime(stoptime.arrivalTime);
             std::string departureTime   = network->castTime(stoptime.departureTime);
@@ -106,6 +117,8 @@ void MainWindow::on_comboBox_fahrt_currentTextChanged(const QString &arg1)
             ui->tableWidget->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(arrivalTime)));
             ui->tableWidget->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(departureTime)));
         };
+
+
     }
     else {
         qDebug() << "No valid ID found in the comboxes.";
@@ -119,13 +132,17 @@ void MainWindow::on_searchLineEdit_textChanged(const QString &arg1)
     (void)arg1; // for unused paramter arg1
     ui->tableWidget->clearContents();   //refresh table
     ui->tableWidget->setRowCount(0); // Remove all rows
+
     QString        trip = ui->comboBox_fahrt->currentText();       //get text from combobox_fahrt
     QVariant    trip_id = ui->comboBox_fahrt->currentData();       //get id from combobox_fahrt
     QString        rout = ui->comboBox->currentText();             //get text from combobox
     QVariant    rout_id = ui->comboBox->currentData();             //get id from combobox
     QString serchText = ui->searchLineEdit->text();
+
     if (trip_id.isValid()) {
         std::string tripId = trip_id.toString().toStdString();
+        std::string routId = rout_id.toString().toStdString();
+
         for (auto stoptime : network->searchStopTimesForTrip(serchText.toStdString(),tripId)){
             std::string arrivalTime     = network->castTime(stoptime.arrivalTime);
             std::string departureTime   = network->castTime(stoptime.departureTime);
@@ -138,25 +155,13 @@ void MainWindow::on_searchLineEdit_textChanged(const QString &arg1)
             ui->tableWidget->setItem(row, 1, new QTableWidgetItem(QString::fromStdString(stop.name)));
             ui->tableWidget->setItem(row, 2, new QTableWidgetItem(QString::fromStdString(arrivalTime)));
             ui->tableWidget->setItem(row, 3, new QTableWidgetItem(QString::fromStdString(departureTime)));
+
+
         }
     }else{
         qDebug() << "No valid ID found in the lineEdited.";
     }
 }
-
-//Nicklas
-// void MainWindow::setRenderAreaData() {
-//     std::unordered_map<std::string, std::vector<bht::Shape>> routeShapes;
-
-//     network->getShapesForRoute();
-
-//     routeShapes = network->routeShapes;
-
-//     std::vector<bht::Route> routes = network->getRoutes();
-//     std::unordered_map<std::string, std::string> colors = network->getRouteColors(routes);
-
-//     renderArea->setNetworkData(routeShapes, colors);
-// }
 
 
 

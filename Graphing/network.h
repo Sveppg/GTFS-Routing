@@ -27,9 +27,9 @@ public:
     std::vector<Transfer> transfers;
     std::vector<Trip> trips;
     std::vector<Stop> search(std::string& query) const;
-    std::vector<Route> getRoutes() const;
+    std::vector<Route> getRoutes() const; // auch verwendet in Üb 6
     std::string getRouteDisplayName(Route route);
-    std::vector<Trip> getTripsForRoute(std::string& routeId);
+    std::vector<Trip> getTripsForRoute(std::string& routeId); // auch verwendet in Üb 6
     std::string getTripDisplayName(Trip trip);
     std::vector<StopTime> getStopTimesForTrip(std::string tripId)const;
     std::string castTime(GTFSTime input);
@@ -45,17 +45,20 @@ public:
     void buildStopIdToTrips(const std::vector<StopTime> &stopTimes);
     void buildTripIdToStopTimes(const std::vector<StopTime> &stopTimes);
 
-    // for Ub 6
-    //std::vector<std::string> getRoutes(const std::string& filename);
-    //std::unordered_map<std::string, std::string> getRouteColors(const std::string& filename);
-    //std::unordered_map<int, std::vector<Shape>> routeShapes(const std::string& filename);
-    //void getShapesForRoute();
 
     NetworkScheduledTrip getScheduledTrip(const std::string& tripId) const;
 
     //map for conversion trip -> StopTimes StopId -> Trips
     std::unordered_map<std::string , std::vector<StopTime>> tripIdToStopTimes;
     std::unordered_map<std::string , std::vector<std::string>> stopIdToTrips;
+
+    //for ub 6
+    std::unordered_map<std::string, std::vector<Trip>> shapeIdfromtrip; // loadTrips trips load into unordered_map
+    std::unordered_map<std::string, std::vector<Shape>> routeShapes;
+    std::unordered_map<std::string, std::vector<Shape>> tripShapes; //Trips-Id zu Shapes load into unordered_map
+    std::unordered_map<std::string, std::string> routeColors;
+
+
 
 private:
     void loadAgencies(const std::string& filePath);

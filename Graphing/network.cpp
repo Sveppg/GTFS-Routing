@@ -13,7 +13,7 @@
 #include "CSVReader.h"
 #include "types.h"
 #include "network.h"
-#include "renderarea.h"
+//#include "renderarea.h"
 
 
 namespace bht {
@@ -27,132 +27,28 @@ Network::Network(const std::string& directoryPath) {
    loadFrequencies(directoryPath + "/frequencies.txt");
    loadLevels(directoryPath + "/levels.txt");
    loadPathways(directoryPath + "/pathways.txt");
-   loadRoutes(directoryPath + "/routes.txt");
+   loadTrips(directoryPath + "/trips.txt");
    loadShapes(directoryPath +"/shapes.txt");
+   loadRoutes(directoryPath + "/routes.txt");
    loadStopTimes(directoryPath + "/stop_times.txt");
    loadStops(directoryPath + "/stops.txt");
    loadTransfers(directoryPath + "/transfers.txt");
-   loadTrips(directoryPath + "/trips.txt");
+
     std::cout << "Data loaded: ->" << std::endl;
 
    buildStopIdToTrips(stopTimes);
    buildTripIdToStopTimes(stopTimes);
 }
 
-
+//nutze schon deklarierte funktion getRoutes (L->377)
+//nutze schon deklarierte Funktion getTripsforRoute (L->386)
+// nutze schon deklarierte Funktion getRoutes
 
 NetworkScheduledTrip Network::getScheduledTrip(const std::string& tripId) const {
     auto stopTimesForTrip = getStopTimesForTrip(tripId);
     return NetworkScheduledTrip(tripId, stopTimesForTrip);
 }
-/*
-std::vector<std::string> getRoutes(const std::string& filename) {
-    std::vector<std::string> routes;
-    std::ifstream file(filename);
-    std::string line, route_id;
 
-    if (!file.is_open()) {
-        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
-        return routes;
-    }
-
-    std::getline(file, line);  // Überspringe die Header-Zeile
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::getline(ss, route_id, ',');
-        routes.push_back(route_id);
-    }
-
-    return routes;
-}
-
-// Funktion, um `route_id -> Farbe` aus `routes.txt` zu mappen
-std::unordered_map<std::string, std::string> getRouteColors(const std::string& filename) {
-    std::unordered_map<std::string, std::string> routeColors;
-    std::ifstream file(filename);
-    std::string line, route_id, color;
-
-    if (!file.is_open()) {
-        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
-        return routeColors;
-    }
-
-    std::getline(file, line);  // Überspringe die Header-Zeile
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::getline(ss, route_id, ',');  // route_id
-        for (int i = 0; i < 4; ++i) std::getline(ss, color, ',');  // Springe zu `route_color`
-        std::getline(ss, color, ',');  // Lese die tatsächliche `route_color`
-
-        if (!color.empty() && color != "\"\"") {
-            routeColors[route_id] = color;
-        }
-    }
-
-    return routeColors;
-}
-
-// Funktion, um die Form (`shape_id`) aus `shapes.txt` zu extrahieren
-std::unordered_map<int, std::vector<Shape>> routeShapes(const std::string& filename) {
-    std::unordered_map<int, std::vector<Shape>> routeShapes;
-    std::ifstream file(filename);
-    std::string line, shape_id_str, lat_str, lon_str, seq_str;
-
-    if (!file.is_open()) {
-        std::cerr << "Fehler beim Öffnen der Datei: " << filename << std::endl;
-        return routeShapes;
-    }
-
-    std::getline(file, line);  // Überspringe die Header-Zeile
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::getline(ss, shape_id_str, ',');
-        std::getline(ss, lat_str, ',');
-        std::getline(ss, lon_str, ',');
-        std::getline(ss, seq_str, ',');
-
-        int shape_id = std::stoi(shape_id_str);
-        double lat = std::stod(lat_str);
-        double lon = std::stod(lon_str);
-        int sequence = std::stoi(seq_str);
-        for(auto [f_id, shapes_our]:routeShapes){
-            std::cout << f_id << std::endl;
-        }
-        //routeShapes[shape_id].push_back({shape_id, lat, lon, sequence});
-        }
-    return routeShapes;
-}
-
-void Network::getShapesForRoute() {
-    std::unordered_map<std::string, std::vector<Shape>> shapesMap;
-    for (const auto& shape : shapes) {
-        shapesMap[shape.id].push_back(shape);
-    }
-
-    std::unordered_map<std::string, std::vector<std::string>> routeToShapes;
-    for (const auto& trip : trips) {
-        routeToShapes[trip.routeId].push_back(trip.shapeId);
-    }
-
-    for (const auto& [routeId, shapeIds] : routeToShapes) {
-        std::vector<std::string> allShapesForRoute;
-
-        for (const auto& shapeId : shapeIds) {
-            if (shapesMap.find(shapeId) != shapesMap.end()) {
-                const auto& shapesForId = shapesMap[shapeId];
-                allShapesForRoute.push_back(shapeId);
-
-                // Korrektur: Füge nur die IDs der Shapes hinzu
-                for (const auto& shape : shapesForId) {
-                    allShapesForRoute.push_back(shape.id);
-                }
-            }
-        }
-
-        routeToShapes[routeId] = allShapesForRoute;
-    }
-}
-*/
 void Network::buildStopIdToTrips(const std::vector<bht::StopTime> &stopTimes){
     // Clear the map
     stopIdToTrips.clear();
@@ -353,40 +249,6 @@ std::vector<bht::Stop> Network::getStopsForTransfer(const std::string& stopId){
     });
     return result;
 }
-// // for 4a
-// std::vector<bht::Stop> Network::getStopsForTransfer(const std::string& stopId){
-//     std::vector<bht::Stop> result;
-//     bht::Stop sto_p = getStopById(stopId);
-//     // std::cout<<"Wahl gefunden"<< sto_p.name <<std::endl;
-//     if ((sto_p.parentStation.empty()) && (sto_p.locationType == LocationType_Station ) ){
-//         // std::cout<<"1 eine stations gefunden"<<std::endl;
-//     for (const auto &[stopid,stop]:stops){
-//         if (stopid.find(stopId) != std::string::npos){
-//                 result.push_back(stop);
-//         }
-//     }
-//     }else if (sto_p.locationType ==LocationType_Stop){
-//         // std::cout<<"2 eine stations gefunden"<<std::endl;
-//     // mogel-Funktion
-//         for (const auto &[stopid,stop]:stops){
-//             if ((stopId!= stop.id) &&(stopId.find(stop.id) != std::string::npos)){
-//                 // std::cout<<stop.id<<std::endl;
-//                 result = Network::getStopsForTransfer(stop.id);
-//                 // result.push_back(stop);
-//             }
-//         }
-//     }
-
-//     // Sortiere die Stop nach Stop-ID
-//     std::sort(result.begin(), result.end(), [](const Stop& a, const Stop& b) {
-//         return a.id < b.id;
-//     });
-//     return result;
-// }
-
-
-
-
 
 //For Search from labor 03
 //seach from the filtered stop
@@ -439,7 +301,7 @@ std::string Network::padZero(int value) {
 std::string Network::castTime(GTFSTime input) {
     return padZero((int)input.hour) + ":"
         + padZero((int)input.minute) + ":"
-        +padZero((int)input.second);
+        + padZero((int)input.second);
 }
 
 //For stoptime
@@ -472,6 +334,7 @@ std::string Network::getRouteDisplayName(Route route){
   return route.shortName;
 }
 // For display routes
+
 std::vector<Route> Network::getRoutes() const{
     std::vector<bht::Route> results;
     for (const auto& [routeId, route]:routes){
@@ -479,6 +342,7 @@ std::vector<Route> Network::getRoutes() const{
     }
     return results;
 }
+
 // For get Trips for Routes
 std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
     std::vector<Trip> result;
@@ -489,6 +353,7 @@ std::vector<Trip> Network::getTripsForRoute(std::string& routeId){
     }
     return result;
 }
+
 //For display trips
 std::string Network::getTripDisplayName(Trip trip){
   if(!trip.shortName.empty()){
@@ -705,36 +570,68 @@ void Network::loadPathways(const std::string& filePath) {
     }
 }
 
-// Method for Routes
-void Network::loadRoutes(const std::string& filePath){
+
+
+
+void Network::loadShapes(const std::string& filePath) {
+    CSVReader shapesReader(filePath);
+    while (shapesReader.hasNext()) {
+        if (shapesReader.next()) {
+            Shape shape;
+            // std::stringstream ss_lat(shapesReader.getField("shape_pt_lat"));
+            // double lat;
+            // ss_lat >> lat;
+            // std::stringstream ss_lon(shapesReader.getField("shape_pt_lon"));
+            // double lon;
+            // ss_lon >> lon;
+            // shape.id = shapesReader.getField("shape_id");
+            // shape.latitude = lat;
+            // shape.longitude = lon;
+            // shape.sequence = std::stoi(shapesReader.getField("shape_pt_sequence"));
+            // shapes.push_back(shape);
+            std::setlocale(LC_NUMERIC,"C");
+            shape.id = shapesReader.getField("shape_id");
+            shape.latitude = std::stod(shapesReader.getField("shape_pt_lat"));
+            shape.longitude = std::stod(shapesReader.getField("shape_pt_lon"));
+            shape.sequence = std::stoi(shapesReader.getField("shape_pt_sequence"));
+            shapes.push_back(shape);
+            // Direkte Zuordnung der Shape-Punkte zu den Trips basierend auf `shapeIdtotripId`
+            auto it = shapeIdfromtrip.find(shape.id);
+            if (it != shapeIdfromtrip.end()) { // Prüfen, ob `shape.id` existiert
+                for (const auto& trip : it->second) { // Iteriere über die zugeordneten Trip-IDs
+                    // routeShapes[trip.routeId].push_back(shape);
+                        routeShapes[trip.routeId].emplace_back(shape);
+                }
+            }
+        }
+    }
+}
+
+void Network::loadRoutes(const std::string& filePath) {
     CSVReader routesReader(filePath);
-    while(routesReader.hasNext()){
-        if(routesReader.next()){
+
+    while (routesReader.hasNext()) {
+        if (routesReader.next()) {
+            // Route-Objekt erstellen
             Route route;
             route.id = routesReader.getField("route_id");
             route.agencyId = routesReader.getField("agency_id");
             route.shortName = routesReader.getField("route_short_name");
             route.longName = routesReader.getField("route_long_name");
             route.description = routesReader.getField("route_desc");
-            route.type = static_cast<RouteType>(std::stoi(routesReader.getField("route_type")));
-            route.color = routesReader.getField("route_color");
-            route.textColor = routesReader.getField("route_text_color");
-            routes[route.id] = route;
-        }
-    }
-}
 
-//Method for Shapes
-void Network::loadShapes(const std::string& filePath){
-    CSVReader shapesReader(filePath);
-    while(shapesReader.hasNext()){
-        if(shapesReader.next()){
-            Shape shape;
-            shape.id = shapesReader.getField("shape_id");
-            shape.latitude = std::stod(shapesReader.getField("shape_pt_lat"));
-            shape.longitude = std::stod(shapesReader.getField("shape_pt_lon"));
-            shape.sequence = std::stoi(shapesReader.getField("shape_pt_sequence"));
-            shapes.push_back(shape);
+            // Enum-Wert für RouteType setzen
+            route.type = static_cast<RouteType>(std::stoi(routesReader.getField("route_type")));
+
+            // Farben setzen
+            route.color = routesReader.getField("route_color");
+
+            // Route in die Map `routes` einfügen
+            routes[route.id] = route;
+
+            // Route-Farbe in die Map `routeColors` einfügen
+            routeColors[route.id] = route.color;  // Nur die Route-Farbe speichern
+
         }
     }
 }
@@ -825,11 +722,10 @@ void Network::loadTransfers(const std::string& filePath) {
 //Method for Trips
 void Network::loadTrips(const std::string& path) {
     CSVReader reader{path};
+
     while (reader.hasNext()) {
-        // Fetch the next line
         if (reader.next()) {
-            //Trip item = {
-            trips.emplace_back(Trip{
+            Trip trip{
                 reader.getField("trip_id"),
                 reader.getField("route_id"),
                 reader.getField("service_id"),
@@ -840,13 +736,16 @@ void Network::loadTrips(const std::string& path) {
                 reader.getField("shape_id"),
                 static_cast<WheelchairAccessibility>(std::stoi(reader.getField("wheelchair_accessible", "0"))),
                 reader.getField("bikes_allowed", "0") == "1"
-            });
-            // Convert the bikes_allowed field to a bool explicitly
-            //static_cast<bool>(static_cast<BikesAllowed>(std::stoi(reader.getField("bikes_allowed", "0")) == 1))
-            //};
-            //trips.push_back(item);
+            };
+
+            // Füge das Trip-Objekt zur Liste `trips` hinzu
+            trips.emplace_back(trip);
+
+            // Füge das gleiche Objekt zur Map `shapeIdtotripId` hinzu
+            shapeIdfromtrip[trip.shapeId].emplace_back(trip);
         }
     }
 }
+
 
 } // for network bht

@@ -1,5 +1,5 @@
-#ifndef RENDERAREA_HPP
-#define RENDERAREA_HPP
+#ifndef RENDERAREA_H
+#define RENDERAREA_H
 #include <QWidget>
 #include <QPixmap>
 #include <QPainter>
@@ -7,7 +7,7 @@
 #include <vector>
 #include "network.h"
 
-/*
+
 class RenderArea : public QWidget {
     Q_OBJECT
 
@@ -17,11 +17,15 @@ public:
     void setNetworkData(const std::unordered_map<std::string, std::vector<bht::Shape>>& Shapes,
                         const std::unordered_map<std::string, std::string>& colors);
 
+    void setHighlight(const std::string& routId);
+    //only for highlighting
+    std::string m_highlightedRouteId;
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
-    void calculateBounds();
+
 
     double m_minLat;
     double m_maxLat;
@@ -31,21 +35,8 @@ private:
     std::unordered_map<std::string, std::vector<bht::Shape>> m_routeShapes;
     std::unordered_map<std::string, std::string> m_routeColors;
 };
-*/
 
 
-// for square
-class RenderArea : public QWidget
-{
-    Q_OBJECT
-public:
-    explicit RenderArea(QWidget *parent = nullptr);
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
-signals:
-
-};
 
 #endif // RENDERAREA_H

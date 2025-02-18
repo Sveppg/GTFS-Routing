@@ -31,20 +31,11 @@ public:
 
 private slots:
 
-    // Only needed for Showing all Data of GTFS
-    //void on_pushButton_clicked();
-
-    //void on_resetPushButton_clicked();
-
-    //void on_searchLineEdit_returnPressed();
-
     void on_comboBox_currentTextChanged(const QString &arg1);
 
     void on_comboBox_fahrt_currentTextChanged(const QString &arg1);
 
     void on_searchLineEdit_textChanged(const QString &arg1);
-
-    //void setRenderAreaData();
 
 
 private:
@@ -57,8 +48,6 @@ private:
     //eventuell für Path implement
     //std::vector<bht::Stop> getTravelPath(const std::string &fromStopId, const std::string& toStopId);
 
-    QGraphicsView *graphicsView;
-    QGraphicsScene *scene;
     RenderArea *renderArea;
 
 };
